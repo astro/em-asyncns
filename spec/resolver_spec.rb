@@ -11,6 +11,15 @@ describe EventMachine::Resolver do
     }
   end
 
+  it "should return deferrables for queries" do
+    EM.run {
+      r = EventMachine::Resolver.new
+      q = r.getaddrinfo("localhost.")
+      q.should be_kind_of(EventMachine::Deferrable)
+      EM.stop
+    }
+  end
+
   context "when resolving localhost" do
     before(:all) do
       EM.run {
