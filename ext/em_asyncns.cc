@@ -9,14 +9,22 @@
 #include <project.h>
 
 
+/**
+ * Represents a successful or failed result
+ **/
 class QueryResult
 {
 private:
+  /** in case of success */
   std::list<std::string> addresses;
+  /** in case of failure */
   const char *error;
 
 public:
-  void *q;  /* asyncns_query_t* */
+  /** asyncns_query_t *, the opaque pointer that will be our query_id
+      string
+  */
+  void *q;
 
   QueryResult(void *q, const char *error)
     : q(q)
@@ -51,6 +59,7 @@ public:
       }
     }
 
+  /** Serializes addresses into [String] */
   VALUE to_ruby()
     {
       if (error)
@@ -74,29 +83,24 @@ public:
  * the C++ part of EventMachine. Until I have figured that out we're
  * going to use some Ruby glue to instruct EM to watch an fd.
  **/
-class AsyncNS //: public EventableDescriptor
+class AsyncNS
 {
 public:
 
   /* Ctor/dtor */
 
-  static const int N_PROC = 1;
+  static const int N_PROC = 16;
 
   static AsyncNS *create()
     {
       asyncns_t *c = asyncns_new(N_PROC);
       int fd = asyncns_fd(c);
-      return new AsyncNS(c, fd/*, EventMachine*/);
+      return new AsyncNS(c, fd);
     }
 
-  AsyncNS(asyncns_t *c, int fd/*, EventMachine_t *em*/)
-    : //EventableDescriptor(fd, em),
-      m_asyncns(c)
+  AsyncNS(asyncns_t *c, int fd)
+    : m_asyncns(c)
     {
-      /* We don't add from here for now, but leave that to the Ruby
-         part:
-         em->Add(this);
-      */
     }
 
   ~AsyncNS()
@@ -106,29 +110,10 @@ public:
 
   /* EM callbacks */
 
-  virtual void Read()
+  virtual void read()
     {
       asyncns_wait(m_asyncns, 0 /* don't block */);
     }
-
-  /*virtual void Write()
-    {
-    }
-
-  virtual void Heartbeat()
-    {
-    }
-
-  virtual bool SelectForRead()
-    {
-      //fprintf(stderr, "asyncns_getnqueries(%p) = %i\n", m_asyncns, asyncns_getnqueries(m_asyncns));
-      return (asyncns_getnqueries(m_asyncns) > 0);
-    }
-
-  virtual bool SelectForWrite()
-    {
-      return false;
-    }*/
 
   /* API */
 
@@ -144,9 +129,7 @@ public:
       hints.ai_family = PF_UNSPEC;
       hints.ai_socktype = SOCK_STREAM;
       
-      //fprintf(stderr, "asyncns_getaddrinfo(%p, %s, ...)\n", m_asyncns, name);
       q = asyncns_getaddrinfo(m_asyncns, name, NULL, &hints);
-      //fprintf(stderr, "asyncns_getaddrinfo(%p, %s, ...) returned %p\n", m_asyncns, name, q);
       return q;
     }
 
@@ -181,16 +164,17 @@ private:
   asyncns_t *m_asyncns;
 };
 
+/**
+ * Methods callable from Ruby
+ **/
 
 static void
 Asyncns_mark(AsyncNS *asyncns)
 {
-  //fprintf(stderr, "Asyncns_mark\n");
 }
 
 static void Asyncns_free(AsyncNS *asyncns)
 {
-  //fprintf(stderr, "Asyncns_free\n");
   delete asyncns;
 }
 
@@ -227,15 +211,23 @@ static VALUE Async_getaddrinfo(VALUE self, VALUE name)
   return rb_str_new(reinterpret_cast<const char *>(&query_id), sizeof(query_id));
 }
 
+/**
+ * EventMachine::AsyncNS#read doesn't block
+ **/
 static VALUE Async_read(VALUE self)
 {
   AsyncNS *asyncns;
   Data_Get_Struct(self, AsyncNS, asyncns);
-  asyncns->Read();
+  asyncns->read();
 
   return Qnil;
 }
 
+/**
+ * EventMachine::AsyncNS#getnext returns { query_id => Result }
+ * where Result = [String] for addresses
+ *              | String for error message
+ **/
 static VALUE Async_getnext(VALUE self)
 {
   AsyncNS *asyncns;
@@ -256,6 +248,7 @@ static VALUE Async_getnext(VALUE self)
   return result;
 }
 
+/** With C linker conventions so that Ruby finds Init_em_asyncns */
 extern "C" {
   void Init_em_asyncns()
   {
