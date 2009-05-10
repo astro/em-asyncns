@@ -59,4 +59,35 @@ describe EventMachine::Resolver do
       @callback.should be_nil
     end
   end
+
+  ##
+  # 256 is libasyncns' hard limit. See MAX_QUERIES in
+  # libasyncns/asyncns.c.
+  context "when resolving localhost 1000 times parallely" do
+    before(:all) do
+      EM.run {
+        r = EventMachine::Resolver.new
+        1000.times do
+          q = r.getaddrinfo("localhost.")
+          @callbacks = []
+          @errbacks = []
+          q.callback { |r|
+            @callbacks << r
+            EM.stop if @callbacks.size + @errbacks.size >= 1000
+          }
+          q.errback { |e|
+            @errbacks << e
+            EM.stop if @callbacks.size + @errbacks.size >= 1000
+          }
+        end
+      }
+    end
+
+    it "should perform 256 callbacks" do
+      @callbacks.size.should == 256
+    end
+    it "should return #{1000-256} errors due to libasyncns MAX_QUERIES" do
+      @errbacks.size.should == 1000 - 256
+    end
+  end
 end

@@ -33,8 +33,21 @@ module EventMachine
     def getaddrinfo(name)
       query_id = @asyncns.getaddrinfo(name)
       deferrable = DefaultDeferrable.new
-      @queries[query_id] = deferrable
+
+      if Resolver.is_null?(query_id)
+        # Probably libasyncns MAX_QUERIES exceeded
+
+        # next_tick, because the user still has to attach an errback
+        EM.next_tick { deferrable.fail 'Cannot query' }
+      else
+        @queries[query_id] = deferrable
+      end
+
       deferrable
+    end
+
+    def self.is_null?(str)
+      str =~ /^\000+$/
     end
 
   end
