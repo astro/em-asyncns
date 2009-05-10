@@ -61,8 +61,8 @@ describe EventMachine::Resolver do
   end
 
   ##
-  # 256 is libasyncns' hard limit. See MAX_QUERIES in
-  # libasyncns/asyncns.c.
+  # For this test it is suggested that you run a local DNS cache, such
+  # as dnsmasq.
   context "when resolving localhost 1000 times parallely" do
     before(:all) do
       EM.run {
@@ -83,11 +83,11 @@ describe EventMachine::Resolver do
       }
     end
 
-    it "should perform 256 callbacks" do
-      @callbacks.size.should == 256
+    it "should perform 1000 callbacks" do
+      @callbacks.size.should == 1000
     end
-    it "should return #{1000-256} errors due to libasyncns MAX_QUERIES" do
-      @errbacks.size.should == 1000 - 256
+    it "should return no errors" do
+      @errbacks.should be_empty
     end
   end
 end
