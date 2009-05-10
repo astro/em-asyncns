@@ -25,6 +25,15 @@ Usage
         }
 
 
+Dnsruby compatibility
+=====================
+
+A drop-in replacement for Dnsruby is provided given you use the
+library exactly as stated in the [EventMachine FAQ](http://rubyeventmachine.com/wiki/FAQ#DoesEMblockonDNSresolutionsi.e.ifyoustartaconnectiontotakes_ages.comwillittemporarilyblocktheotherprocesseswhileitworks).
+
+See spec/dnsruby_spec.rb for details.
+
+
 ext/asyncns.h
 =========
 
