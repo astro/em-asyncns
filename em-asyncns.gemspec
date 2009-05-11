@@ -17,7 +17,6 @@ Gem::Specification.new do |s|
     "README.md",
     "Rakefile",
     "VERSION.yml",
-    "ext/em_asyncns.cc",
     "ext/em_asyncns/asyncns.h",
     "ext/em_asyncns/em_asyncns.cc",
     "ext/em_asyncns/extconf.rb",
