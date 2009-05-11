@@ -40,9 +40,3 @@ ext/asyncns.h
 ...is included in a slightly modified form because the original one
 had parameter names like `class' which prevents compiling as C++.
 
-
-TODO
-====
-
-- implement timeouts
-- check for space-leaks
