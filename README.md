@@ -44,8 +44,5 @@ had parameter names like `class' which prevents compiling as C++.
 TODO
 ====
 
-- Dnsruby compat
-- Rakefile
-- Gem
 - implement timeouts
 - check for space-leaks
