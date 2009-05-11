@@ -1,5 +1,5 @@
 require 'eventmachine'
-require File.dirname(__FILE__) + "/../ext/em_asyncns.so"
+require File.dirname(__FILE__) + "/../lib/em_asyncns.so"
 
 describe EventMachine::AsyncNS do
   it "should be allocatable" do
