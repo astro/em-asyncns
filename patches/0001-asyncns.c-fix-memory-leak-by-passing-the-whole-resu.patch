@@ -1,34 +1,35 @@
-From a7e0242aa1d0d374a6d1277546d67c92082df296 Mon Sep 17 00:00:00 2001
+From 18694481f4bf2391099fcd7e7f17477fa2daa831 Mon Sep 17 00:00:00 2001
 From: Stephan Maka <stephan@spaceboyz.net>
-Date: Mon, 11 May 2009 03:07:19 +0200
+Date: Mon, 11 May 2009 16:20:39 +0200
 Subject: [PATCH] asyncns.c: fix memory leak by passing the whole result to freeaddrinfo()
 
 ---
- libasyncns/asyncns.c |    8 +++-----
- 1 files changed, 3 insertions(+), 5 deletions(-)
+ libasyncns/asyncns.c |    9 ++++-----
+ 1 files changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/libasyncns/asyncns.c b/libasyncns/asyncns.c
-index 4088ce7..071a6b9 100644
+index 60d8e24..2070f09 100644
 --- a/libasyncns/asyncns.c
 +++ b/libasyncns/asyncns.c
-@@ -450,9 +450,6 @@ static int send_addrinfo_reply(int out_fd, unsigned id, int ret, struct addrinfo
+@@ -255,9 +255,6 @@ static int send_addrinfo_reply(int out_fd, unsigned id, int ret, struct addrinfo
          }
      }
  
 -    if (ai)
 -        freeaddrinfo(ai);
 -
-     return send(out_fd, resp, resp->header.length, MSG_NOSIGNAL);
+     return send(out_fd, resp, resp->header.length, 0);
  }
  
-@@ -538,8 +535,9 @@ static int handle_request(int out_fd, const rheader_t *req, size_t length) {
+@@ -337,8 +334,10 @@ static int handle_request(int out_fd, const rheader_t *req, size_t length) {
                                ai_req->hints_is_null ? NULL : &ai,
                                &result);
  
 -            /* send_addrinfo_reply() frees result */
--            return send_addrinfo_reply(out_fd, req->id, ret, result, errno, h_errno);
-+            ret = send_addrinfo_reply(out_fd, req->id, ret, result, errno, h_errno);
-+            freeaddrinfo(result);
+-            return send_addrinfo_reply(out_fd, req->id, ret, result);
++            ret = send_addrinfo_reply(out_fd, req->id, ret, result);
++            if (result)
++              freeaddrinfo(result);
 +            return ret;
          }
  
